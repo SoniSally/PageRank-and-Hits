@@ -1,0 +1,357 @@
+// SONI J SALLY   cs610 7598 prp
+
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.DecimalFormat;
+
+public class pgrk_7598 {
+
+    private static final double d_Factor = 0.85d;
+    private static final int MAX_NUMBER_OF_VERTICES = 10;
+    private static final String CHARSET_NAME = "US-ASCII";
+    private static final String REGEX = " ";
+    private static final DecimalFormat DISPLAY_VALUE_FORMAT = new DecimalFormat ("#0.0000000");
+    private int iterations;
+    private int initialValue;
+    private String fileName;
+    private boolean isIterated;
+    private boolean is_Graph_Large;
+	private double errorRate;
+	private int Num_Of_Vertices;
+	private int num_of_Edges;
+	private double [][] adj_Mat;
+	private double [] auth_Val;
+	private int [] outGLinks;
+
+	public int getIterations () {
+		return iterations;
+	}
+
+	public void setIterations (int iterations) {
+		this.iterations = iterations;
+	}
+
+	public int getinitial_Value () {
+		return initialValue;
+	}
+
+	public void setInitialValue (int initialValue) {
+		this.initialValue = initialValue;
+	}
+
+	public String getFile_Name () {
+		return fileName;
+	}
+
+	public void setFileName (String fileName) {
+		this.fileName = fileName;
+	}
+
+	public boolean isIterated () {
+		return isIterated;
+	}
+
+	public void setIterated (boolean isIterated) {
+		this.isIterated = isIterated;
+	}
+
+	public boolean is_Graph_Large () {
+		return is_Graph_Large;
+	}
+
+	public void setLargeGraph (boolean is_Graph_Large) {
+		this.is_Graph_Large = is_Graph_Large;
+	}
+
+	public double getErrorRate () {
+		return errorRate;
+	}
+
+	public void setErrorRate (double errorRate) {
+		this.errorRate = errorRate;
+	}
+
+	public int getNum_Of_Vertices () {
+		return Num_Of_Vertices;
+	}
+
+	public void setNum_Of_Vertices (int Num_Of_Vertices) {
+		this.Num_Of_Vertices = Num_Of_Vertices;
+	}
+
+	public int getnum_of_Edges () {
+		return num_of_Edges;
+	}
+
+	public void setnum_of_Edges (int num_of_Edges) {
+		this.num_of_Edges = num_of_Edges;
+	}
+
+	public double[][] getadj_Mat () {
+		return adj_Mat;
+	}
+
+	public void setadj_Mat (double[][] adj_Mat) {
+		this.adj_Mat = adj_Mat;
+	}
+
+	public double[] getauth_Val () {
+		return auth_Val;
+	}
+
+	public void setauth_Val (double[] auth_Val) {
+		this.auth_Val = auth_Val;
+	}
+
+	public int[] getOutGLinks () {
+		return outGLinks;
+	}
+
+	public void setOutGLinks (int[] outGLinks) {
+		this.outGLinks = outGLinks;
+	}
+
+	public pgrk_7598 () {
+	}
+
+	public static void main (String[] args) {
+
+        // Check for the input arguments.
+		if (args.length != 3) {
+			System.err.println ("Please check the command...");
+			System.err.println ("1. java pgrk_7598 <iterations> <initialvalue> <filename>");
+			return;
+		}
+        pgrk_7598 PRGraphAlgo = new pgrk_7598 ();
+		PRGraphAlgo.setIterations (Integer.parseInt (args[0]));
+		PRGraphAlgo.setInitialValue (Integer.parseInt (args[1]));
+		PRGraphAlgo.setFileName (args[2]);
+		try {
+			PRGraphAlgo.readFileAndSetMatrixValues_7598 (PRGraphAlgo);
+			PRGraphAlgo.setValuesOtherThanMatrix_7598 (PRGraphAlgo);
+			PRGraphAlgo.runPageRankAlgorithm_7598 (PRGraphAlgo);
+		} catch (FileNotFoundException e) {
+		    System.err.println ("Something went wrong while accessing the file - " + PRGraphAlgo.getFile_Name () + " Please check once that the file is placed in the same folder as that of class files.");
+		} catch (IOException e) {
+		    System.err.println ("Something went wrong while reading the file - " + PRGraphAlgo.getFile_Name ());
+		}
+	}
+
+	// Method used for file reading and setting the adjacency matrix and transpose values.  
+	private void readFileAndSetMatrixValues_7598 (pgrk_7598 PRGraphAlgo) throws FileNotFoundException, IOException {
+
+		Charset charset = Charset.forName (CHARSET_NAME);
+		String line = null;
+		boolean isFirstLine = true;
+		int Node1;
+		int Node2;
+		Path realFileName = Paths.get ("./" + PRGraphAlgo.getFile_Name ());
+		BufferedReader bufferedReader = Files.newBufferedReader (realFileName, charset);
+		while ((line = bufferedReader.readLine ()) != null) {
+			if (!line.trim ().equalsIgnoreCase("")) {
+				String [] nodeValues = line.split (REGEX);
+				// Check - 2 values for each input line.
+				if (nodeValues.length != 2) {
+					System.err.println ("Something went wrong while reading line. Please check the input file - " + PRGraphAlgo.getFile_Name ());
+					System.exit (0);
+				}
+				Node1 = Integer.parseInt (nodeValues [0]);
+				Node2 = Integer.parseInt (nodeValues [1]);
+				if (isFirstLine) {
+					PRGraphAlgo.setNum_Of_Vertices (Node1);
+					PRGraphAlgo.setnum_of_Edges (Node2);
+					// Initialize the values as we now know the value of the total number of vertices.
+					initializeMatVal_7598 (PRGraphAlgo);
+					isFirstLine = false;
+				} else {
+					// Check to protect from getting exception - ArrayIndexOutOfBoundsException.
+					if (Node1 >= PRGraphAlgo.getNum_Of_Vertices () || Node2 >= PRGraphAlgo.getNum_Of_Vertices ()) {
+						System.err.println ("Some of the input nodes have values greater than or equal to the total number of vertices. Please check the input file - " + PRGraphAlgo.getFile_Name ());
+						System.exit (0);
+					} else {
+						PRGraphAlgo.adj_Mat [Node1][Node2] = 1d;
+					}
+				}
+			}
+		}
+	}
+
+	private static void initializeMatVal_7598 (pgrk_7598 PRGraphAlgo) {
+		int total_Vertices = PRGraphAlgo.getNum_Of_Vertices ();
+		if (total_Vertices > MAX_NUMBER_OF_VERTICES) {
+			PRGraphAlgo.setIterations (0);
+			PRGraphAlgo.setInitialValue (-1);
+			PRGraphAlgo.setLargeGraph (true);
+		}
+		if (PRGraphAlgo.getIterations () > 0) {
+		    PRGraphAlgo.setIterated (true);
+		} else {
+			PRGraphAlgo.setIterated (false);
+			if (PRGraphAlgo.getIterations () == 0) {
+				PRGraphAlgo.setErrorRate (Math.pow (10, -5));
+			} else {
+				PRGraphAlgo.setErrorRate (Math.pow (10, PRGraphAlgo.getIterations ()));
+			}
+		}
+		PRGraphAlgo.setadj_Mat (new double [total_Vertices][total_Vertices]);
+		PRGraphAlgo.setauth_Val (new double [total_Vertices]);
+		PRGraphAlgo.setOutGLinks (new int [total_Vertices]);
+	}
+
+	// Method used to set the authority and hub values based on the initial value given.
+	private void setValuesOtherThanMatrix_7598 (pgrk_7598 PRGraphAlgo) {
+		int total_Vertices = PRGraphAlgo.getNum_Of_Vertices ();
+		double value = 0d;
+		switch (PRGraphAlgo.getinitial_Value ()) {
+		    case 0 :
+			    // Needs to initialize values as 0.
+			    value = 0d;
+			    break;
+    		case 1 :
+	    		// Needs to initialize values as 1.
+		    	value = 1d;
+			    break;
+		    case -1 :
+			    // Needs to initialize values as 1/Number of vertices.
+			    value = (double) (1d/ (double) total_Vertices);
+			    break;
+	    	case -2 :
+		    	// Needs to initialize values as 1/Square root of number of vertices.
+			    value = (double) (1d/ (double) Math.sqrt (total_Vertices));
+			    break;
+		    default :
+			    // Needs to initialize values as 1/Number of vertices.
+		    	System.err.println ("Invalid Values...");
+			System.exit(0);
+		    	//value = (double) (1d/ (double) total_Vertices);
+			    break;
+		}
+	    for (int i = 0; i < total_Vertices; i++) {
+		    this.auth_Val [i] = value;
+		    this.outGLinks [i] = 0;
+            for (int j = 0; j < total_Vertices; j++) {
+            	this.outGLinks [i] += PRGraphAlgo.adj_Mat [i][j];
+            }
+	    }
+	}
+
+	private void runPageRankAlgorithm_7598 (pgrk_7598 PRGraphAlgo) {
+		int total_Vertices = PRGraphAlgo.getNum_Of_Vertices ();
+		double [] updatedPageRank = new double [total_Vertices];
+		int count_Iteration = 0;
+		boolean isB_Case = true;
+		boolean is_Converge = true;
+
+		// If it is iterated, we have to display that many iterations...no convergence check required.
+		if (PRGraphAlgo.isIterated ()) {
+			for (int i = 0; i <= PRGraphAlgo.getIterations (); i++) {
+				String outputLine = "";
+				if (isB_Case) {
+					isB_Case = false;
+					outputLine = "Base";
+				} else {
+					outputLine = "Iter";
+					for (int v = 0; v < total_Vertices; v++) {
+	                    for (int w = 0; w < total_Vertices; w++) {
+	                        if (PRGraphAlgo.adj_Mat [w][v] == 1d) {
+	                        	double pageRankByOutDegree = (PRGraphAlgo.auth_Val[w] / PRGraphAlgo.outGLinks[w]);
+	                        	updatedPageRank[v] += pageRankByOutDegree;
+	                        }
+	                    }
+	                }
+	                for (int v = 0; v < total_Vertices; v++) {
+	                	updatedPageRank [v] = (1 - d_Factor) / total_Vertices + (d_Factor * updatedPageRank [v]);
+	                	PRGraphAlgo.auth_Val[v] = updatedPageRank[v];
+	                	updatedPageRank[v] = 0d;
+	                }
+				}
+				if (i < 10) {
+					outputLine = outputLine + "    :  " + i + " :";	
+				} else if (i < 100) {
+					outputLine = outputLine + "    : " + i + " :";
+				} else {
+					outputLine = outputLine + "    :" + i + " :";
+				}
+				for (int v = 0; v < total_Vertices; v++) {
+					outputLine = outputLine + "P[" + v + "]=" + DISPLAY_VALUE_FORMAT.format (Math.round (PRGraphAlgo.auth_Val[v] * 10000000d) / 10000000d) + " ";
+				}
+				System.out.println (outputLine);
+			}
+		} else {
+            do {
+            	is_Converge = true;
+				String outputLine = "";
+				if (isB_Case) {
+					isB_Case = false;
+					outputLine = "Base";
+				} else {
+					outputLine = "Iter";
+					for (int v = 0; v < total_Vertices; v++) {
+	                    for (int w = 0; w < total_Vertices; w++) {
+	                        if (PRGraphAlgo.adj_Mat [w][v] == 1d) {
+	                        	double pageRankByOutDegree = (PRGraphAlgo.auth_Val[w] / PRGraphAlgo.outGLinks[w]);
+	                        	updatedPageRank[v] += pageRankByOutDegree;
+	                        }
+	                    }
+	                }
+	                for (int v = 0; v < total_Vertices; v++) {
+	                    updatedPageRank [v] = (1 - d_Factor) / total_Vertices + (d_Factor * updatedPageRank [v]);
+	                }
+				}
+				if (count_Iteration < 10) {
+					outputLine = outputLine + "    :  " + count_Iteration + " :";
+				} else if (count_Iteration < 100) {
+					outputLine = outputLine + "    : " + count_Iteration + " :";
+				} else {
+					outputLine = outputLine + "    :" + count_Iteration + " :";
+				}
+				for (int v = 0; v < total_Vertices; v++) {
+		            if (Math.abs (PRGraphAlgo.auth_Val[v] - updatedPageRank[v]) > PRGraphAlgo.getErrorRate ()) {
+		            	is_Converge = false;
+						break;
+		            }
+		        }
+				if (PRGraphAlgo.is_Graph_Large ()) {
+					if (is_Converge) {
+						outputLine = "Iter    :  " + count_Iteration;
+						System.out.println (outputLine);
+						for (int k = 0; k < 3; k++) {
+							outputLine = "P[" + k + "]=" + DISPLAY_VALUE_FORMAT.format (Math.round (updatedPageRank[k] * 10000000d) / 10000000d);
+							System.out.println (outputLine);
+						}
+						System.out.println ("... other vertices omitted");
+					}
+				} else {
+					for (int v = 0; v < total_Vertices; v++) {
+						if (count_Iteration != 0) {
+							outputLine = outputLine + "P[" + v + "]=" + DISPLAY_VALUE_FORMAT.format (Math.round (updatedPageRank[v] * 10000000d) / 10000000d) + " ";	
+						} else {
+							outputLine = outputLine + "P[" + v + "]=" + DISPLAY_VALUE_FORMAT.format (Math.round (PRGraphAlgo.auth_Val[v] * 10000000d) / 10000000d) + " ";
+						}
+					}
+					System.out.println (outputLine);
+				}
+				for (int v = 0; v < total_Vertices; v++) {
+					if (count_Iteration != 0) {
+						PRGraphAlgo.auth_Val[v] = updatedPageRank[v];
+					}
+					updatedPageRank[v] = 0d;
+                }
+				count_Iteration++;
+			} while (!is_Converge);
+		}
+	}
+
+	@Override
+	public String toString() {
+		return "iterations::" + iterations + ", " + "initialValue::" + initialValue + ", " +
+            "fileName::" + fileName + ", " + "isIterated::" + isIterated + ", " +
+            "errorRate::" + errorRate + ", " + "Num_Of_Vertices::" + Num_Of_Vertices + ", " +
+            "num_of_Edges::" + num_of_Edges;
+    }
+}
